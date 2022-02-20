@@ -1,4 +1,7 @@
 import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
   Box,
   Button,
   Container,
@@ -10,35 +13,73 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
+import { motion } from "framer-motion";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
+import { useEffect } from "react";
 import { useRef } from "react";
 import { useState } from "react";
 
+const MotionBox = motion(Box);
+
+const containerVariant = {
+  normal: {},
+  spin: {
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const taskVariant = {
+  normal: {},
+  spin: {
+    scale: 1.1,
+    transition: {
+      repeatType: "reverse",
+      ease: "linear",
+      duration: 0.4,
+      repeat: Infinity,
+    },
+  },
+};
+
 interface ITaskProps {
   task: TTask;
+  isResult: boolean;
 }
 
-const Task = ({ task }: ITaskProps) => {
+const Task = ({ task, isResult }: ITaskProps) => {
+  const elRef = useRef(null);
+
+  useEffect(() => {
+    if (isResult) {
+      // TODO: scroll into view
+    }
+  }, [isResult]);
+
   return (
-    <Flex
-      borderRadius="sm"
-      boxShadow="lg"
-      border="1px"
-      p="2"
-      alignItems="center"
-    >
-      <Text
-        flexGrow={1}
-        whiteSpace="nowrap"
-        overflow="hidden"
-        textOverflow="ellipsis"
-        mr="4"
+    <MotionBox variants={taskVariant} minWidth="0">
+      <Flex
+        ref={elRef}
+        borderRadius="sm"
+        boxShadow="lg"
+        border={isResult ? "2px" : "1px"}
+        p="2"
+        alignItems="center"
       >
-        {task.name}
-      </Text>
-    </Flex>
+        <Text
+          flexGrow={1}
+          whiteSpace="nowrap"
+          overflow="hidden"
+          textOverflow="ellipsis"
+          mr="4"
+        >
+          {task.name}
+        </Text>
+      </Flex>
+    </MotionBox>
   );
 };
 
@@ -69,7 +110,8 @@ const Home: NextPage = () => {
     });
 
     nameRef.current.value = "";
-    prioRef.current.value = "";
+    prioRef.current.value = "1";
+    nameRef.current.focus();
   };
 
   const spinWheel = () => {
@@ -104,6 +146,17 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      <Box as="header" py="4" bg="blue.100">
+        <Container>
+          <Heading as="h1" fontSize={["2xl", "3xl"]}>
+            Procrastination Roulette
+          </Heading>
+          <Text fontSize="sm" color="gray.700">
+            Add your Tasks and Spin to see what you should be working on!
+          </Text>
+        </Container>
+      </Box>
+
       <Box as="main" py="4">
         <Container>
           <Stack mb="4">
@@ -121,11 +174,29 @@ const Home: NextPage = () => {
               Add Task
             </Button>
           </Stack>
-          <Grid gap={2} templateColumns="1fr 1fr" mb="4">
-            {tasks.map((t, idx) => (
-              <Task task={t} key={idx} />
-            ))}
-          </Grid>
+          <Box mb="4">
+            {tasks.length === 0 ? (
+              <Alert status="warning">
+                <AlertIcon />
+                <AlertDescription display="block">
+                  I am sure you have to do something... Add some tasks and spin
+                  the wheel!
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <MotionBox
+                variants={containerVariant}
+                initial="normal"
+                animate="normal"
+              >
+                <Grid gap={2} templateColumns="1fr 1fr">
+                  {tasks.map((t, idx) => (
+                    <Task task={t} isResult={t === result} key={idx} />
+                  ))}
+                </Grid>
+              </MotionBox>
+            )}
+          </Box>
           <Button
             d="block"
             w="100%"
